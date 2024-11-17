@@ -13,6 +13,7 @@ const TodoPage = () => {
   const toast = useUiToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState<string>('');
+  const [editedTasks, setEditedTasks] = useState<{[key: number]: string}>({});
 
   const handleFetchTasks = async () => {
     try {
@@ -52,6 +53,38 @@ const TodoPage = () => {
     }
   };
 
+  const handleTaskChange = (taskId: number, value: string) => {
+    setEditedTasks(prev => ({
+      ...prev,
+      [taskId]: value
+    }));
+  };
+
+  const handleUpdateTask = async (taskId: number) => {
+    const newName = editedTasks[taskId];
+    if (!newName || newName.trim() === '') return;
+
+    try {
+      const loading = toast.loading('Modification de la tâche en cours...');
+      const result = await api.patch(`/tasks/${taskId}`, { id: taskId, name: newName });
+      
+      if (result) {
+        loading.update('Tâche modifiée avec succès !', 'success');
+        handleFetchTasks();
+        // Réinitialiser l'état d'édition
+        setEditedTasks(prev => {
+          const newState = { ...prev };
+          delete newState[taskId];
+          return newState;
+        });
+      } else {
+        loading.update('Erreur lors de la modification de la tâche', 'error');
+      }
+    } catch (error) {
+      toast.error('Une erreur est survenue lors de la modification de la tâche');
+    }
+  };
+
   useEffect(() => {
     (async () => {
       handleFetchTasks();
@@ -68,9 +101,19 @@ const TodoPage = () => {
         {
           Array.isArray(tasks) && tasks.map((task) => (
             <Box key={task.id} display="flex" justifyContent="center" alignItems="center" mt={2} gap={1} width="100%">
-              <TextField size="small" value={task.name} fullWidth sx={{ maxWidth: 350 }} />
+              <TextField 
+                size="small" 
+                value={editedTasks[task.id] !== undefined ? editedTasks[task.id] : task.name} 
+                onChange={(e) => handleTaskChange(task.id, e.target.value)}
+                fullWidth 
+                sx={{ maxWidth: 350 }} 
+              />
               <Box>
-                <IconButton color="success" disabled>
+                <IconButton 
+                  color="success" 
+                  disabled={!editedTasks[task.id] || editedTasks[task.id].trim() === task.name}
+                  onClick={() => handleUpdateTask(task.id)}
+                >
                   <Check />
                 </IconButton>
                 <IconButton color="error" onClick={() => handleDelete(task.id)}>

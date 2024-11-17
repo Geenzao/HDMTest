@@ -36,4 +36,12 @@ export default class TaskRepository {
       }
     });
   }
+
+  async findById(id: number) {
+    return this.prisma.task.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
 }

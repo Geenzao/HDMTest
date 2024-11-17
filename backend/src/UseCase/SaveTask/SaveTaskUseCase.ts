@@ -15,7 +15,14 @@ export default class SaveTaskUseCase implements UseCase<Promise<Task>, [dto: Sav
         throw new BadRequestException('Le nom de la tâche est requis');
       }
 
-      // Assurez-vous que l'id est null pour une nouvelle tâche
+      // Si c'est une mise à jour, vérifions que la tâche existe
+      if (dto.id) {
+        const existingTask = await this.taskRepository.findById(dto.id);
+        if (!existingTask) {
+          throw new BadRequestException('Tâche non trouvée');
+        }
+      }
+
       const taskData = {
         id: dto.id || null,
         name: dto.name.trim()

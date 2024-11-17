@@ -36,20 +36,28 @@ const TodoPage = () => {
 
   const handleSave = async () => {
     if (!newTask.trim()) return;
-    
+  
+    // Vérifier si le nom de la tâche existe déjà
+    const taskExists = tasks.some(task => task.name.toLowerCase() === newTask.trim().toLowerCase());
+    if (taskExists) {
+      toast.error('Une tâche avec ce nom existe déjà');
+      return;
+    }
+  
     try {
-      const loading = toast.loading('Ajout de la tâche...');
+      const loading = toast.loading('Adding task...');
       const result = await api.post('/tasks', { name: newTask });
       
-      if (result) {
-        loading.update('Tâche ajoutée avec succès', 'success');
+      if (result?.id) {
+        loading.update('Task added successfully!', 'success');
         setNewTask('');
         handleFetchTasks();
       } else {
-        loading.update('Erreur lors de l\'ajout de la tâche', 'error');
+        loading.update('Error while adding task', 'error');
       }
-    } catch (error) {
-      toast.error('Erreur lors de l\'ajout de la tâche');
+    } catch (error: any) {
+      toast.error(error.message || 'A task with this name already exists');
+      setNewTask('');
     }
   };
 
@@ -64,24 +72,30 @@ const TodoPage = () => {
     const newName = editedTasks[taskId];
     if (!newName || newName.trim() === '') return;
 
+    // Check if the task name already exists
+    const taskExists = tasks.some(task => task.name.toLowerCase() === newName.trim().toLowerCase() && task.id !== taskId);
+    if (taskExists) {
+      toast.error('A task with this name already exists');
+      return;
+    }
+
     try {
-      const loading = toast.loading('Modification de la tâche en cours...');
+      const loading = toast.loading('Updating task...');
       const result = await api.patch(`/tasks/${taskId}`, { id: taskId, name: newName });
       
-      if (result) {
-        loading.update('Tâche modifiée avec succès !', 'success');
+      if (result?.id) {
+        loading.update('Task updated successfully!', 'success');
         handleFetchTasks();
-        // Réinitialiser l'état d'édition
         setEditedTasks(prev => {
           const newState = { ...prev };
           delete newState[taskId];
           return newState;
         });
       } else {
-        loading.update('Erreur lors de la modification de la tâche', 'error');
+        loading.update('Error while updating task', 'error');
       }
-    } catch (error) {
-      toast.error('Une erreur est survenue lors de la modification de la tâche');
+    } catch (error: any) {
+      toast.error(error.message || 'A task with this name already exists');
     }
   };
 

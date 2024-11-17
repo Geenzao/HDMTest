@@ -13,12 +13,15 @@ export default function useFetch() {
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${route}`, requestOptions);
+      const jsonResponse = await response.json();
 
-      return response.json();
+      if (!response.ok) {
+        throw new Error(jsonResponse.message || 'An error occurred');
+      }
+
+      return jsonResponse;
     } catch (error) {
-      console.error(error);
-
-      return false;
+      throw error;
     }
   };
 

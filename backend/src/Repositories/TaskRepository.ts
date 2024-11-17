@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../PrismaService';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '.prisma/client';
 
 @Injectable()
 export default class TaskRepository {
@@ -18,15 +18,22 @@ export default class TaskRepository {
     });
   }
 
-  async save(
-    data:
-      | Prisma.XOR<Prisma.TaskCreateInput, Prisma.TaskUncheckedCreateInput>
-      | Prisma.XOR<Prisma.TaskUpdateInput, Prisma.TaskUncheckedUpdateInput>,
-  ) {
+  async save(data: Prisma.XOR<Prisma.TaskCreateInput, Prisma.TaskUncheckedCreateInput>) {
     if (!data.id) {
-      // @todo IMPLEMENT HERE USING PRISMA API
+      return this.prisma.task.create({
+        data: {
+          name: data.name
+        }
+      });
     }
-
-    // @todo IMPLEMENT HERE USING PRISMA API
+  
+    return this.prisma.task.update({
+      where: {
+        id: data.id as number
+      },
+      data: {
+        name: data.name
+      }
+    });
   }
 }

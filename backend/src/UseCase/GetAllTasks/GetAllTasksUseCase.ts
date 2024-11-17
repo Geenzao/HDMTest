@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Task } from '@prisma/client';
+import { Task } from '.prisma/client';
 import { UseCase } from '../../index';
 import TaskRepository from '../../Repositories/TaskRepository';
 

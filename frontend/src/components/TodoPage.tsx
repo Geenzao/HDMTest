@@ -40,9 +40,15 @@ const TodoPage = () => {
 
   // Delete a task by ID
   const handleDelete = async (id: number) => {
-    await api.delete(`/tasks/${id}`);
-    handleFetchTasks();
-  }
+    try {
+      const loading = toast.loading('Deleting task...');
+      await api.delete(`/tasks/${id}`);
+      loading.update('Task deleted successfully!', 'success');
+      handleFetchTasks();
+    } catch (error: any) {
+      toast.error(error.message || 'Error while deleting task');
+    }
+  };
 
   // Create a new task
   const handleSave = async () => {

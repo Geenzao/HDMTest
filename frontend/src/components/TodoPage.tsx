@@ -1,9 +1,10 @@
 /**
- * @todo YOU HAVE TO IMPLEMENT THE DELETE AND SAVE TASK ENDPOINT, A TASK CANNOT BE UPDATED IF THE TASK NAME DID NOT CHANGE, YOU'VE TO CONTROL THE BUTTON STATE ACCORDINGLY
+ * Main TodoPage component that handles the todo list functionality
+ * Features: Create, Read, Update, Delete tasks with search functionality
  */
 import { Check, Delete } from '@mui/icons-material';
 import { Box, Button, Checkbox, Container, IconButton, TextField, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import useFetch from '../hooks/useFetch.ts';
 import { Task } from '../index';
 import useUiToast from '../hooks/useUiToast.ts';
@@ -13,31 +14,40 @@ const TodoPage = () => {
   const toast = useUiToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [editedTasks, setEditedTasks] = useState<{[key: number]: string}>({});
 
+  // Filter tasks based on search query
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => 
+      task.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [tasks, searchQuery]);
+
+  // Fetch all tasks from the API
   const handleFetchTasks = async () => {
     try {
       const result = await api.get('/tasks');
       if (result) {
         setTasks(result);
       } else {
-        toast.error('Erreur lors du chargement des tâches');
+        toast.error('Error loading tasks');
       }
     } catch (error) {
-      toast.error('Erreur lors du chargement des tâches');
+      toast.error('Error loading tasks');
     }
   };
 
+  // Delete a task by ID
   const handleDelete = async (id: number) => {
-    // @todo IMPLEMENT HERE : DELETE THE TASK & REFRESH ALL THE TASKS, DON'T FORGET TO ATTACH THE FUNCTION TO THE APPROPRIATE BUTTON
     await api.delete(`/tasks/${id}`);
     handleFetchTasks();
   }
 
+  // Create a new task
   const handleSave = async () => {
     if (!newTask.trim()) return;
   
-    // Vérifier si le nom de la tâche existe déjà
     const taskExists = tasks.some(task => task.name.toLowerCase() === newTask.trim().toLowerCase());
     if (taskExists) {
       toast.error('A task with this name already exists');
@@ -61,6 +71,7 @@ const TodoPage = () => {
     }
   };
 
+  // Handle task name changes in edit mode
   const handleTaskChange = (taskId: number, value: string) => {
     setEditedTasks(prev => ({
       ...prev,
@@ -68,12 +79,14 @@ const TodoPage = () => {
     }));
   };
 
+  // Update existing task
   const handleUpdateTask = async (taskId: number) => {
     const newName = editedTasks[taskId];
     if (!newName || newName.trim() === '') return;
 
-    // Check if the task name already exists
-    const taskExists = tasks.some(task => task.name.toLowerCase() === newName.trim().toLowerCase() && task.id !== taskId);
+    const taskExists = tasks.some(task => 
+      task.name.toLowerCase() === newName.trim().toLowerCase() && task.id !== taskId
+    );
     if (taskExists) {
       toast.error('A task with this name already exists');
       return;
@@ -95,41 +108,51 @@ const TodoPage = () => {
         loading.update('Error while updating task', 'error');
       }
     } catch (error: any) {
-      toast.error(error.message || 'A task with this name already exists');
+      toast.error(error.message || 'Error updating task');
     }
   };
 
+  // Toggle task completion status
   const handleToggleDone = async (taskId: number, currentDone: boolean) => {
     try {
-      const loading = toast.loading('Mise à jour de la tâche...');
+      const loading = toast.loading('Updating task status...');
       const result = await api.patch(`/tasks/${taskId}`, { id: taskId, done: !currentDone });
       
       if (result?.id) {
-        loading.update('Tâche mise à jour avec succès !', 'success');
+        loading.update('Task status updated successfully!', 'success');
         handleFetchTasks();
       } else {
-        loading.update('Erreur lors de la mise à jour de la tâche', 'error');
+        loading.update('Error updating task status', 'error');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la mise à jour de la tâche');
+      toast.error(error.message || 'Error updating task status');
     }
   };
 
+  // Initial load of tasks
   useEffect(() => {
-    (async () => {
-      handleFetchTasks();
-    })();
+    handleFetchTasks();
   }, []);
 
   return (
     <Container>
       <Box display="flex" justifyContent="center" mt={5}>
-        <Typography variant="h2">HDM Todo List</Typography>
+        <Typography variant="h2">Todo List</Typography>
+      </Box>
+
+      <Box display="flex" justifyContent="center" mt={3}>
+        <TextField
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tasks..."
+          sx={{ maxWidth: 350 }}
+        />
       </Box>
 
       <Box justifyContent="center" mt={5} flexDirection="column">
         {
-          Array.isArray(tasks) && tasks.map((task) => (
+          Array.isArray(filteredTasks) && filteredTasks.map((task) => (
             <Box key={task.id} display="flex" justifyContent="center" alignItems="center" mt={2} gap={1} width="100%">
               <Checkbox
                 checked={task.done}
@@ -168,10 +191,10 @@ const TodoPage = () => {
             size="small"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            placeholder="Nouvelle tâche"
+            placeholder="New task"
             sx={{ maxWidth: 350 }}
           />
-          <Button variant="outlined" onClick={handleSave}>Ajouter une tâche</Button>
+          <Button variant="outlined" onClick={handleSave}>Add a task</Button>
         </Box>
       </Box>
     </Container>

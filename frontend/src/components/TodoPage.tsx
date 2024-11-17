@@ -2,7 +2,7 @@
  * @todo YOU HAVE TO IMPLEMENT THE DELETE AND SAVE TASK ENDPOINT, A TASK CANNOT BE UPDATED IF THE TASK NAME DID NOT CHANGE, YOU'VE TO CONTROL THE BUTTON STATE ACCORDINGLY
  */
 import { Check, Delete } from '@mui/icons-material';
-import { Box, Button, Container, IconButton, TextField, Typography } from '@mui/material';
+import { Box, Button, Checkbox, Container, IconButton, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import useFetch from '../hooks/useFetch.ts';
 import { Task } from '../index';
@@ -40,7 +40,7 @@ const TodoPage = () => {
     // Vérifier si le nom de la tâche existe déjà
     const taskExists = tasks.some(task => task.name.toLowerCase() === newTask.trim().toLowerCase());
     if (taskExists) {
-      toast.error('Une tâche avec ce nom existe déjà');
+      toast.error('A task with this name already exists');
       return;
     }
   
@@ -99,6 +99,22 @@ const TodoPage = () => {
     }
   };
 
+  const handleToggleDone = async (taskId: number, currentDone: boolean) => {
+    try {
+      const loading = toast.loading('Mise à jour de la tâche...');
+      const result = await api.patch(`/tasks/${taskId}`, { id: taskId, done: !currentDone });
+      
+      if (result?.id) {
+        loading.update('Tâche mise à jour avec succès !', 'success');
+        handleFetchTasks();
+      } else {
+        loading.update('Erreur lors de la mise à jour de la tâche', 'error');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de la mise à jour de la tâche');
+    }
+  };
+
   useEffect(() => {
     (async () => {
       handleFetchTasks();
@@ -115,12 +131,21 @@ const TodoPage = () => {
         {
           Array.isArray(tasks) && tasks.map((task) => (
             <Box key={task.id} display="flex" justifyContent="center" alignItems="center" mt={2} gap={1} width="100%">
+              <Checkbox
+                checked={task.done}
+                onChange={() => handleToggleDone(task.id, task.done)}
+              />
               <TextField 
                 size="small" 
                 value={editedTasks[task.id] !== undefined ? editedTasks[task.id] : task.name} 
                 onChange={(e) => handleTaskChange(task.id, e.target.value)}
                 fullWidth 
-                sx={{ maxWidth: 350 }} 
+                sx={{ 
+                  maxWidth: 350,
+                  '& .MuiInputBase-input': {
+                    textDecoration: task.done ? 'line-through' : 'none',
+                  }
+                }} 
               />
               <Box>
                 <IconButton 

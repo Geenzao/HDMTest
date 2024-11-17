@@ -10,12 +10,6 @@ export default class SaveTaskUseCase implements UseCase<Promise<Task>, [dto: Sav
 
   async handle(dto: SaveTaskDto) {
     try {
-      // Validation basique
-      if (!dto.name || dto.name.trim() === '') {
-        throw new BadRequestException('Le nom de la tâche est requis');
-      }
-
-      // Si c'est une mise à jour, vérifions que la tâche existe
       if (dto.id) {
         const existingTask = await this.taskRepository.findById(dto.id);
         if (!existingTask) {
@@ -25,7 +19,8 @@ export default class SaveTaskUseCase implements UseCase<Promise<Task>, [dto: Sav
 
       const taskData = {
         id: dto.id || null,
-        name: dto.name.trim()
+        name: dto.name?.trim(),
+        done: dto.done !== undefined ? dto.done : undefined,
       };
 
       return await this.taskRepository.save(taskData);

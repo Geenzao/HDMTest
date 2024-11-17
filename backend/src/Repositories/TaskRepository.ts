@@ -22,18 +22,21 @@ export default class TaskRepository {
     if (!data.id) {
       return this.prisma.task.create({
         data: {
-          name: data.name
+          name: data.name,
+          done: 'done' in data ? data.done : false
         }
       });
     }
   
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.done !== undefined) updateData.done = data.done;
+
     return this.prisma.task.update({
       where: {
         id: data.id as number
       },
-      data: {
-        name: data.name
-      }
+      data: updateData
     });
   }
 
